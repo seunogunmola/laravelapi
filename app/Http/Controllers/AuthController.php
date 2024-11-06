@@ -10,62 +10,54 @@ class AuthController extends Controller
 {
     public function login(Request $request)
     {
+        //GET USER CREDENTIALS
         $credentials = $request->validate([
             'email' => 'required|email',
-            'password' => 'required'
+            'password' => 'required',
         ]);
-
-        if (Auth::attempt($credentials)) {
-            $user = Auth::user();
-            $token = $user->createToken('access_token')->plainTextToken;
-            return response()
-                ->json(
-                    [
-                        'status' => true,
-                        'message' => 'Login Successful',
-                        'data' => [
-                            'user' => $user,
-                            'token' => $token
-                        ]
-                    ],
-                    200
-                );
-        } else {
+        //PERFORM AUTHENTICATION
+        if (!Auth::attempt($credentials)) {
             return response()->json(
                 [
-                    'status' => false,
-                    'message' => 'Invalid Credentials'
-                ],
-                401
-            );
+                    'status'=>false,
+                    'message' => 'Invalid credentials'
+                ], 
+                401);                
         }
+
+        $user = Auth::user();
+        $token = $user->createToken('auth_token')->plainTextToken;
+        return response()->json([
+            'status'=>true,
+            'message'=>'Login Successful',
+            'access_token' => $token,
+        ]);
     }
 
     public function register(Request $request){
-        //Validation
+        //Validate Input
         $validated = $request->validate(
             [
-                'name'=>'string|required',
-                'email'=>'email|required|unique:users',
-                'password'=>'string|required|confirmed|min:8',
+                'name' => 'required',
+                'email' => 'required|email|unique:users',
+                'password' => 'required|confirmed',
             ]
-        );
-
+        );  
+        
+        //Create User
         $user = User::create($validated);
 
-        $token = $user->createToken('access_token')->plainTextToken;
+        //Generate Token
+        $token = $user->createToken('auth_token')->plainTextToken;
 
-        return response()
-                ->json(
-                    [
-                        'status' => true,
-                        'message' => 'Registration Successful',
-                        'data' => [
-                            'user' => $user,
-                            'token' => $token
-                        ]
-                    ],
-                    201
-                );
+        //Return Response
+        return response()->json([
+            'status'=>true,
+            'message'=>'Login Successful',
+            'data'=>[
+                'user'=>$user,
+                'access_token' => $token
+            ]            
+        ]);        
     }
 }
